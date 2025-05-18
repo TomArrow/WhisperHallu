@@ -38,7 +38,7 @@ if(useSpleeter):
     print("Using spleeter:2stems-16kHz")
     separator = Separator('spleeter:2stems-16kHz',stft_backend=backend)
 
-useDemucs=True
+useDemucs=False
 if(useDemucs):
     from demucsWrapper import load_demucs_model
     from demucsWrapper import demucs_audio
@@ -84,7 +84,7 @@ beam_size=2
 patience=0
 temperature=0
 model = None
-device = "cuda" #cuda / cpu
+device = "cpu" #cuda / cpu
 cudaIdx = 0
 
 SAMPLING_RATE = 16000
@@ -115,10 +115,11 @@ def loadModel(gpu: str,modelSize=None):
             if(modelSize == "large"):
                 modelSize = "large"+whisperVersion #"large-v1" "large-v2" "large-v3"
             print("LOADING: "+modelSize+" GPU:"+gpu+" BS: "+str(beam_size)+" PTC="+str(patience)+" TEMP="+str(temperature))
-            model = whisper.load_model(modelSize,device=torch.device("cuda:"+gpu)) #May be "cpu"
+            model = whisper.load_model(modelSize,device=torch.device("cpu")) #("cuda:"+gpu)) #May be "cpu"
         elif whisperFound == "SM4T":
             print("LOADING: "+"seamlessM4T_large"+" GPU:"+gpu)
-            model = Translator("seamlessM4T_large", "vocoder_36langs", torch.device("cuda:"+gpu), torch.float16)
+            #model = Translator("seamlessM4T_large", "vocoder_36langs", torch.device("cuda:"+gpu), torch.float16)
+            model = Translator("seamlessM4T_large", "vocoder_36langs", torch.device("cpu"), torch.float16)
         print("LOADED")
         whisperLoaded = modelSize
     except Exception as e:
@@ -241,6 +242,7 @@ def transcribeOpts(path: str,opts: dict
         print("PATH="+pathWAV,flush=True)
         pathIn = pathClean = pathWAV
     except Exception as e:
+         print(path)
          print("Warning: can't convert to WAV")
          print(e)
 
@@ -273,8 +275,8 @@ def transcribeOpts(path: str,opts: dict
         print("T=",(time.time()-startTime))
         duration = getDuration(pathIn+".dur")
         print("DURATION="+str(duration)+" max "+str(maxDuration))
-        if(duration > maxDuration):
-            return "[Too long ("+str(duration)+"s)]"
+        #if(duration > maxDuration):
+        #    return "[Too long ("+str(duration)+"s)]"
     except Exception as e:
          print("Warning: can't analyze duration")
          print(e)
@@ -308,7 +310,8 @@ def transcribeOpts(path: str,opts: dict
             #aCmd = "python -m demucs --two-stems=vocals -d "+device+":"+cudaIdx+" --out "+demucsDir+" "+pathIn
             #print("CMD: "+aCmd)
             #os.system(aCmd)
-            demucs_audio(pathIn=pathIn,model=modelDemucs,device="cuda:"+cudaIdx,pathVocals=pathDemucsVocals,pathOther=pathIn+".other.wav")
+            #demucs_audio(pathIn=pathIn,model=modelDemucs,device="cuda:"+cudaIdx,pathVocals=pathDemucsVocals,pathOther=pathIn+".other.wav")
+            demucs_audio(pathIn=pathIn,model=modelDemucs,device="cpu",pathVocals=pathDemucsVocals,pathOther=pathIn+".other.wav")
             print("T=",(time.time()-startTime))
             print("PATH="+pathDemucsVocals,flush=True)
             pathNoCut = pathIn = pathDemucsVocals
@@ -414,6 +417,13 @@ def transcribeOpts(path: str,opts: dict
     if(len(result["text"]) > 0):
         print("s/c=",(time.time()-initTime)/len(result["text"]))
     print("c/s=",len(result["text"])/(time.time()-initTime))
+    
+    pathTranscript = pathIn+".transcript.txt"
+    
+    print(pathTranscript)
+    
+    with open(pathTranscript, "w") as text_file:
+        text_file.write(result["text"])
     
     return result["text"]
 
