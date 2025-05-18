@@ -193,7 +193,7 @@ def getPrompt(lng:str):
     return ""
 
 
-def transcribePrompt(path: str,lng: str,prompt=None,lngInput=None,isMusic=False,addSRT=False,truncDuration=TRUNC_DURATION,maxDuration=MAX_DURATION):
+def transcribePrompt(path: str,pathOut: str,lng: str,prompt=None,lngInput=None,isMusic=False,addSRT=False,truncDuration=TRUNC_DURATION,maxDuration=MAX_DURATION):
     """Whisper transcribe."""
 
     if(lngInput == None):
@@ -208,13 +208,14 @@ def transcribePrompt(path: str,lng: str,prompt=None,lngInput=None,isMusic=False,
     
     print("=====transcribePrompt",flush=True)
     print("PATH="+path,flush=True)
+    print("PATHOUT="+pathOut,flush=True)
     print("LNGINPUT="+lngInput,flush=True)
     print("LNG="+lng,flush=True)
     print("PROMPT="+prompt,flush=True)
     opts = dict(language=lng,initial_prompt=prompt)
-    return transcribeOpts(path, opts,lngInput,isMusic=isMusic,addSRT=addSRT,subEnd=truncDuration,maxDuration=maxDuration)
+    return transcribeOpts(path, pathOut, opts,lngInput,isMusic=isMusic,addSRT=addSRT,subEnd=truncDuration,maxDuration=maxDuration)
 
-def transcribeOpts(path: str,opts: dict
+def transcribeOpts(path: str,pathOut: str,opts: dict
                    ,lngInput=None,isMusic=False,onlySRT=False,addSRT=False
                    ,subBeg="0",subEnd=str(TRUNC_DURATION)
                    ,maxDuration=MAX_DURATION
@@ -232,9 +233,10 @@ def transcribeOpts(path: str,opts: dict
     duration = -1
     try:
         #Convert to WAV to avoid later possible decoding problem
-        pathWAV = pathIn+".WAV"+".wav"
-        aCmd = "ffmpeg -y"+" -i \""+pathIn+"\""+" -ss "+subBeg+" -to "+subEnd + " -c:a pcm_s16le -ar "+str(SAMPLING_RATE)+" \""+pathWAV+"\" > \""+pathWAV+".log\" 2>&1"
-        print("CMD: "+aCmd)
+        pathWAV = str(pathOut)+".WAV"+".wav"
+        print("WAVPATH="+pathWAV,flush=True)
+        aCmd = "ffmpeg -y"+" -i \""+pathIn+"\""+" -ss "+str(subBeg)+" -to "+str(subEnd) + " -c:a pcm_s16le -ar "+str(SAMPLING_RATE)+" \""+pathWAV+"\" > \""+pathWAV+".log\" 2>&1"
+        print("CMD: "+aCmd,flush=True)
         os.system(aCmd)
         duration = getDuration(pathWAV+".log")
         print("T=",(time.time()-startTime))
@@ -245,6 +247,8 @@ def transcribeOpts(path: str,opts: dict
          print(path)
          print("Warning: can't convert to WAV")
          print(e)
+         print(traceback.format_exc())
+         print("ERROR END")
 
     try:
         if(stretch != None):

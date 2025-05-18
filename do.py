@@ -4,6 +4,7 @@ from transcribeHallu import transcribePrompt
 
 ##### The audio language may be different from the one for the output transcription.
 path=sys.argv[1]
+pathOut=sys.argv[2]
 lngInput="en"
 
 print("debugPath")
@@ -28,5 +29,5 @@ modelSize="tiny"
 loadModel("0",modelSize=modelSize)
 
 
-result = transcribePrompt(path=path, lng=lng, prompt=prompt, lngInput=lngInput,isMusic=isMusic)
+result = transcribePrompt(path=path, pathOut=pathOut, lng=lng, prompt=prompt, lngInput=lngInput,isMusic=isMusic)
 
