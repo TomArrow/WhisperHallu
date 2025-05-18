@@ -112,6 +112,7 @@ cd ..
 
 ct2-transformers-converter --model openai/whisper-medium --output_dir whisper-medium-ct2 --quantization float16
 ct2-transformers-converter --model openai/whisper-large --output_dir whisper-large-ct2 --quantization float16
+ct2-transformers-converter --model deepdml/whisper-large-v3-turbo --output_dir whisper-turbo-ct2 --copy_files tokenizer.json preprocessor_config.json --quantization float16
 
 pip3 install torchaudio
 ```

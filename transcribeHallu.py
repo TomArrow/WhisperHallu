@@ -2,6 +2,8 @@ import sys
 import os
 import time
 import re
+import multiprocessing
+import pathlib
 from _io import StringIO
  
 if sys.version_info.major == 3 and sys.version_info.minor >= 10:
@@ -17,7 +19,7 @@ import traceback
 
 import torch
 
-torch.set_num_threads(1)
+#torch.set_num_threads(int(multiprocessing.cpu_count()/2))
 useSileroVAD=True
 if(useSileroVAD):
     modelVAD, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
@@ -62,8 +64,8 @@ try:
     from faster_whisper import WhisperModel
     print("Using Faster Whisper")
     whisperFound = "FSTR"
-    modelPath = "whisper-medium-ct2/"#"whisper-medium-ct2/" "whisper-large-ct2/"
-    if not os.path.exists(modelPath):
+    modelPath = "whisper-turbo-ct2/"#"whisper-medium-ct2/" "whisper-large-ct2/"
+    if not os.path.exists(str(pathlib.Path(__file__).parent.resolve())+"/"+modelPath):
         print("Faster installation found, but "+modelPath+" model not found")
         sys.exit(-1)
 except ImportError as e:
@@ -102,12 +104,15 @@ def loadModel(gpu: str,modelSize=None):
     cudaIdx = gpu
     try:
         if whisperFound == "FSTR":
-            if(modelSize == "large"):
+            if(modelSize == "turbo"):
+                modelPath = "whisper-turbo-ct2/"
+            elif(modelSize == "large"):
                 modelPath = "whisper-large-ct2/"
             else:
                 modelPath = "whisper-medium-ct2/"
+            modelPath = str(pathlib.Path(__file__).parent.resolve()) + "/" + modelPath
             print("LOADING: "+modelPath+" GPU: "+gpu+" BS: "+str(beam_size)+" PTC="+str(patience)+" TEMP="+str(temperature))
-            compute_type="float16"# float16 int8_float16 int8
+            compute_type="float32"# float16 int8_float16 int8
             model = WhisperModel(modelPath, device=device,device_index=int(gpu), compute_type=compute_type)
         elif whisperFound == "STD":
             if(modelSize == None):
