@@ -25,7 +25,7 @@ prompt= "Whisper, Ok. "\
 	+"Ok, Whisper. "
 
 ##### Model size to use
-modelSize="tiny"
+modelSize=sys.argv[3]
 loadModel("0",modelSize=modelSize)
 
 
