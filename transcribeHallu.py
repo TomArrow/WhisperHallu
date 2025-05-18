@@ -227,32 +227,36 @@ def transcribeOpts(path: str,pathOut: str,opts: dict
     pathClean = path
     pathNoCut = path
     
+    pathOutUsed = False
+    
     initTime = time.time()
     
     startTime = time.time()
     duration = -1
-    try:
-        #Convert to WAV to avoid later possible decoding problem
-        pathWAV = str(pathOut)+".WAV"+".wav"
-        print("WAVPATH="+pathWAV,flush=True)
-        aCmd = "ffmpeg -y"+" -i \""+pathIn+"\""+" -ss "+str(subBeg)+" -to "+str(subEnd) + " -c:a pcm_s16le -ar "+str(SAMPLING_RATE)+" \""+pathWAV+"\" > \""+pathWAV+".log\" 2>&1"
-        print("CMD: "+aCmd,flush=True)
-        os.system(aCmd)
-        duration = getDuration(pathWAV+".log")
-        print("T=",(time.time()-startTime))
-        print("DURATION="+str(duration)+" subBeg="+str(subBeg)+" subEnd="+str(subEnd))
-        print("PATH="+pathWAV,flush=True)
-        pathIn = pathClean = pathWAV
-    except Exception as e:
-         print(path)
-         print("Warning: can't convert to WAV")
-         print(e)
-         print(traceback.format_exc())
-         print("ERROR END")
+    if(False):
+        try:
+            #Convert to WAV to avoid later possible decoding problem
+            pathWAV = str(pathOut)+".WAV"+".wav"
+            print("WAVPATH="+pathWAV,flush=True)
+            aCmd = "ffmpeg -y"+" -i \""+pathIn+"\""+" -ss "+str(subBeg)+" -to "+str(subEnd) + " -c:a pcm_s16le -ar "+str(SAMPLING_RATE)+" \""+pathWAV+"\" > \""+pathWAV+".log\" 2>&1"
+            print("CMD: "+aCmd,flush=True)
+            os.system(aCmd)
+            duration = getDuration(pathWAV+".log")
+            print("T=",(time.time()-startTime))
+            print("DURATION="+str(duration)+" subBeg="+str(subBeg)+" subEnd="+str(subEnd))
+            print("PATH="+pathWAV,flush=True)
+            pathIn = pathClean = pathWAV
+            pathOutUsed = True
+        except Exception as e:
+             print(path)
+             print("Warning: can't convert to WAV")
+             print(e)
+             print(traceback.format_exc())
+             print("ERROR END")
 
     try:
         if(stretch != None):
-            pathSTRETCH = pathIn+".STRETCH"+".wav"
+            pathSTRETCH = (pathOut if not pathOutUsed else pathIn)+".STRETCH"+".wav"
             #ffmpeg STRECH
             aCmd = "ffmpeg -y -i \""+pathIn+"\""+" -t "+str(truncDuration) + " -filter:a \"atempo="+stretch+"\"" + " -c:a pcm_s16le -ar "+str(SAMPLING_RATE)+" \""+pathSTRETCH+"\" > \""+pathSTRETCH+".log\" 2>&1"
             #sox STRECH
@@ -266,6 +270,7 @@ def transcribeOpts(path: str,pathOut: str,opts: dict
             print("T=",(time.time()-startTime))
             print("PATH="+pathWAV,flush=True)
             pathIn = pathClean = pathWAV = pathSTRETCH
+            pathOutUsed = True
     except Exception as e:
          print("Warning: can't STRETCH")
          print(e)
@@ -273,11 +278,11 @@ def transcribeOpts(path: str,pathOut: str,opts: dict
     startTime = time.time()
     try:
         #Check for duration
-        aCmd = "ffmpeg -y -i \""+pathIn+"\" "+ " -f null - > \""+pathIn+".dur\" 2>&1"
+        aCmd = "ffmpeg -y -i \""+pathIn+"\" "+ " -f null - > \""+pathOut+".dur\" 2>&1"
         print("CMD: "+aCmd)
         os.system(aCmd)
         print("T=",(time.time()-startTime))
-        duration = getDuration(pathIn+".dur")
+        duration = getDuration(pathOut+".dur")
         print("DURATION="+str(duration)+" max "+str(maxDuration))
         #if(duration > maxDuration):
         #    return "[Too long ("+str(duration)+"s)]"
@@ -288,7 +293,7 @@ def transcribeOpts(path: str,pathOut: str,opts: dict
     try:
         if(useSpleeter):
             startTime = time.time()
-            spleeterDir=pathIn+".spleeter"
+            spleeterDir=(pathOut if not pathOutUsed else pathIn)+".spleeter"
             if(not os.path.exists(spleeterDir)):
                 os.mkdir(spleeterDir)
             pathSpleeter=spleeterDir+"/"+os.path.splitext(os.path.basename(pathIn))[0]+"/vocals.wav"
@@ -296,6 +301,7 @@ def transcribeOpts(path: str,pathOut: str,opts: dict
             print("T=",(time.time()-startTime))
             print("PATH="+pathSpleeter,flush=True)
             pathNoCut = pathIn = pathSpleeter
+            pathOutUsed = True
     except Exception as e:
          print("Warning: can't split vocals")
          print(e)
@@ -306,32 +312,34 @@ def transcribeOpts(path: str,pathOut: str,opts: dict
             #demucsDir=pathIn+".demucs"
             #if(not os.path.exists(demucsDir)):
             #    os.mkdir(demucsDir)
-            pathDemucsVocals=pathIn+".vocals.wav" #demucsDir+"/htdemucs/"+os.path.splitext(os.path.basename(pathIn))[0]+"/vocals.wav"
-            pathDemucsDrums=pathIn+".drums.wav"
-            pathDemucsBass=pathIn+".bass.wav"
-            pathDemucsOther=pathIn+".other.wav"
+            pathDemucsVocals=(pathOut if not pathOutUsed else pathIn)+".vocals.wav" #demucsDir+"/htdemucs/"+os.path.splitext(os.path.basename(pathIn))[0]+"/vocals.wav"
+            pathDemucsDrums=(pathOut if not pathOutUsed else pathIn)+".drums.wav"
+            pathDemucsBass=(pathOut if not pathOutUsed else pathIn)+".bass.wav"
+            pathDemucsOther=(pathOut if not pathOutUsed else pathIn)+".other.wav"
             #Demucs seems complex, using CLI cmd for now
             #aCmd = "python -m demucs --two-stems=vocals -d "+device+":"+cudaIdx+" --out "+demucsDir+" "+pathIn
             #print("CMD: "+aCmd)
             #os.system(aCmd)
             #demucs_audio(pathIn=pathIn,model=modelDemucs,device="cuda:"+cudaIdx,pathVocals=pathDemucsVocals,pathOther=pathIn+".other.wav")
-            demucs_audio(pathIn=pathIn,model=modelDemucs,device="cpu",pathVocals=pathDemucsVocals,pathOther=pathIn+".other.wav")
+            demucs_audio(pathIn=pathIn,model=modelDemucs,device="cpu",pathVocals=pathDemucsVocals,pathOther=pathDemucsOther)
             print("T=",(time.time()-startTime))
             print("PATH="+pathDemucsVocals,flush=True)
             pathNoCut = pathIn = pathDemucsVocals
+            pathOutUsed = True
         except Exception as e:
              print("Warning: can't split vocals")
              print(e)
 
     startTime = time.time()
     try:
-        pathSILCUT = pathIn+".SILCUT"+".wav"
+        pathSILCUT = (pathOut if not pathOutUsed else pathIn)+".SILCUT"+".wav"
         aCmd = "ffmpeg -y -i \""+pathIn+"\" -af \"silenceremove=start_periods=1:stop_periods=-1:start_threshold=-50dB:stop_threshold=-50dB:start_silence=0.2:stop_silence=0.2, loudnorm\" "+ " -c:a pcm_s16le -ar "+str(SAMPLING_RATE)+" \""+pathSILCUT+"\" > \""+pathSILCUT+".log\" 2>&1"
         print("CMD: "+aCmd)
         os.system(aCmd)
         print("T=",(time.time()-startTime))
         print("PATH="+pathSILCUT,flush=True)
         pathIn = pathSILCUT
+        pathOutUsed = True
     except Exception as e:
          print("Warning: can't filter blanks")
          print(e)
@@ -340,7 +348,7 @@ def transcribeOpts(path: str,pathOut: str,opts: dict
         if(not isMusic and useSileroVAD):
             startTime = time.time()
             
-            pathVAD = pathIn+".VAD.wav"
+            pathVAD = (pathOut if not pathOutUsed else pathIn)+".VAD.wav"
             wav = read_audio(pathIn, sampling_rate=SAMPLING_RATE)
             #https://github.com/snakers4/silero-vad/blob/master/utils_vad.py#L161
             speech_timestamps = get_speech_timestamps(wav, modelVAD,threshold=0.5,min_silence_duration_ms=500, sampling_rate=SAMPLING_RATE)
@@ -348,6 +356,7 @@ def transcribeOpts(path: str,pathOut: str,opts: dict
             print("T=",(time.time()-startTime))
             print("PATH="+pathVAD,flush=True)
             pathIn = pathVAD
+            pathOutUsed = True
     except Exception as e:
          print("Warning: can't filter noises")
          print(e)
