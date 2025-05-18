@@ -529,7 +529,7 @@ def transcribeMARK(path: str,opts: dict,mode = 1,lngInput=None,aLast=None,isMusi
             multiRes = ""
             for r in range(nbRun):
                 print("RUN: "+str(r))
-                segments, info = model.transcribe(pathIn,**transcribe_options)
+                segments, info = model.transcribe(pathIn,log_progress=True,**transcribe_options)
                 resSegs = []
                 if(mode == 3):
                     aSegCount = 0
@@ -543,7 +543,7 @@ def transcribeMARK(path: str,opts: dict,mode = 1,lngInput=None,aLast=None,isMusi
                             resSegs.append("\n"+str(aSegCount)+"\n"+formatTimeStamp(segment.start)+" --> "+formatTimeStamp(segment.end)+"\n"+segment.text.strip()+"\n")
                 else:
                     for segment in segments:
-                        resSegs.append(segment.text)
+                        resSegs.append(segment.text.strip()+"\n")
                 
                 result["text"] = "".join(resSegs)
                 if(r > 0):
