@@ -440,7 +440,7 @@ def transcribeOpts(path: str,pathOut: str,opts: dict
     
     print(pathTranscript)
     
-    with open(pathTranscript, "w") as text_file:
+    with open(pathTranscript, "w", encoding="utf-8") as text_file:
         text_file.write(result["text"])
     
     return result["text"]
@@ -469,14 +469,14 @@ def transcribeMARK(path: str,opts: dict,mode = 1,lngInput=None,aLast=None,isMusi
         #Not marker with SM4T
         mode = 0
     
-    if os.path.exists("markers/WOK-MRK-"+lngInput+".wav"):
-        mark1="markers/WOK-MRK-"+lngInput+".wav"
+    if os.path.exists(str(pathlib.Path(__file__).parent.resolve()) + "/"+ "markers/WOK-MRK-"+lngInput+".wav"):
+        mark1=str(pathlib.Path(__file__).parent.resolve()) + "/"+"markers/WOK-MRK-"+lngInput+".wav"
     else:
-        mark1="markers/WOK-MRK.wav"
-    if os.path.exists("markers/OKW-MRK-"+lngInput+".wav"):
-        mark2="markers/OKW-MRK-"+lngInput+".wav"
+        mark1=str(pathlib.Path(__file__).parent.resolve()) + "/"+"markers/WOK-MRK.wav"
+    if os.path.exists(str(pathlib.Path(__file__).parent.resolve()) + "/"+"markers/OKW-MRK-"+lngInput+".wav"):
+        mark2=str(pathlib.Path(__file__).parent.resolve()) + "/"+"markers/OKW-MRK-"+lngInput+".wav"
     else:
-        mark2="markers/OKW-MRK.wav"
+        mark2=str(pathlib.Path(__file__).parent.resolve()) + "/"+"markers/OKW-MRK.wav"
     
     if(mode == 2):
         mark = mark1
